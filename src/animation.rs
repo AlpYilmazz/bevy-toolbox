@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use bevy::{
-    prelude::{Component, Query, ResMut, Res, Plugin, PreUpdate, Transform, Update, Vec3, debug},
+    prelude::{Component, Query, Res, Plugin, Transform, Update, Vec3, debug},
     time::Time,
 };
 
