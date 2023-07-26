@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::inventory::BaseInventory;
+use crate::{inventory::BaseInventory, DummyImage};
 
 #[derive(Component, Clone, Copy)]
 pub struct ItemPreview;
@@ -13,11 +13,19 @@ pub struct Item {
     pub code: ItemCode,
 }
 
-pub fn spawn_item_prototypes(mut commands: Commands, mut inventory: ResMut<BaseInventory>) {
+#[derive(Component, Default, Clone)]
+pub struct ItemImage(pub Handle<Image>);
+
+pub fn spawn_item_prototypes(
+    mut commands: Commands,
+    dummy_image: Res<DummyImage>,
+    mut inventory: ResMut<BaseInventory>,
+) {
     // 0: Rectangle item
     commands.spawn((
         ItemPreview,
         ItemCode(1),
+        ItemImage(dummy_image.0.clone()),
         SpriteBundle {
             sprite: Sprite {
                 color: Color::RED.with_a(0.5),
@@ -36,6 +44,7 @@ pub fn spawn_item_prototypes(mut commands: Commands, mut inventory: ResMut<BaseI
     commands.spawn((
         ItemPreview,
         ItemCode(2),
+        ItemImage(dummy_image.0.clone()),
         SpriteBundle {
             sprite: Sprite {
                 color: Color::GREEN.with_a(0.5),

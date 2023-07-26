@@ -1,12 +1,19 @@
+use std::time::Duration;
+
+use animation::{curves, Animation, AnimationCurve, Animator, Repeat, TransformTranslationLens};
 use bevy::{prelude::*, window::PrimaryWindow};
+use grid::{AsGridCoord, GridSettings};
 use inventory::BaseInventory;
 use items::{ItemCode, ItemPreview};
 use utils::cursor_to_window_coord;
 
+pub mod animation;
+pub mod grid;
 pub mod inventory;
 pub mod items;
 pub mod utils;
 
+const DUMMY_IMAGE_PATH: &'static str = "happy-tree.png";
 const BACKGROUND_COLOR: Color = Color::rgba(0.0, 180.0 / 255.0, 1.0, 1.0);
 
 const NUMERIC_KEY_CODES: &'static [(KeyCode, usize)] = &[
@@ -22,7 +29,17 @@ const NUMERIC_KEY_CODES: &'static [(KeyCode, usize)] = &[
     (KeyCode::Key9, 9),
 ];
 
-pub fn spawn_initial(mut commands: Commands, primary_window: Query<&Window, With<PrimaryWindow>>) {
+#[derive(Resource)]
+pub struct DummyImage(pub Handle<Image>);
+
+pub fn spawn_initial(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    primary_window: Query<&Window, With<PrimaryWindow>>,
+) {
+    let dummy_image_handle = asset_server.load(DUMMY_IMAGE_PATH);
+    commands.insert_resource(DummyImage(dummy_image_handle.clone()));
+
     commands.spawn(Camera2dBundle::default());
 
     let primary_window = primary_window.single();
@@ -40,6 +57,36 @@ pub fn spawn_initial(mut commands: Commands, primary_window: Query<&Window, With
             .with_scale(Vec3::new(window_w, window_h, 1.0)),
         ..Default::default()
     });
+
+    // Spawn the dummy image for reference
+    let window_padding = 40.0; // TODO: global?
+    let pos = Vec3::new(
+        -window_w / 2.0 + window_padding,
+        -window_h / 2.0 + window_padding,
+        0.5,
+    );
+    commands.spawn((
+        SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(50.0, 50.0)),
+                ..Default::default()
+            },
+            texture: dummy_image_handle,
+            transform: Transform::from_translation(pos).with_scale(Vec3::new(1.0, 1.0, 1.0)),
+            ..Default::default()
+        },
+        Animator::new(
+            Animation {
+                duration: Duration::from_secs(2),
+                curve: AnimationCurve::new(curves::second_order),
+            },
+            Repeat::Mirrored,
+            TransformTranslationLens {
+                start: pos,
+                end: pos + Vec3::new(100.0, 100.0, 0.0),
+            },
+        ),
+    ));
 }
 
 pub fn select_item(key: Res<Input<KeyCode>>, mut inventory: ResMut<BaseInventory>) {
@@ -52,9 +99,12 @@ pub fn select_item(key: Res<Input<KeyCode>>, mut inventory: ResMut<BaseInventory
 
 pub fn show_selected_item(
     primary_window: Query<&Window, With<PrimaryWindow>>,
+    grid_settings: Res<GridSettings>,
     inventory: Res<BaseInventory>,
     mut preview_items: Query<(&ItemCode, &mut Transform, &mut Visibility), With<ItemPreview>>,
 ) {
+    let grid_size = grid_settings.size;
+
     let primary_window = primary_window.single();
     let window_h = primary_window.height();
     let window_w = primary_window.width();
@@ -70,8 +120,11 @@ pub fn show_selected_item(
                     // debug!("{:?}", cursor);
                     let cursor_in_window =
                         cursor_to_window_coord(cursor.clone(), window_h, window_w);
-                    transform.translation.x = cursor_in_window.x;
-                    transform.translation.y = cursor_in_window.y;
+                    let grid_translation = cursor_in_window
+                        .as_grid_coord(grid_size)
+                        .translation(grid_size);
+                    transform.translation.x = grid_translation.x;
+                    transform.translation.y = grid_translation.y;
                 }
             }
         }

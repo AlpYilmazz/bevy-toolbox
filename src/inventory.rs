@@ -2,7 +2,7 @@ use std::array;
 
 use bevy::{prelude::*, window::PrimaryWindow};
 
-use crate::items::Item;
+use crate::items::{Item, ItemCode, ItemImage, ItemPreview};
 
 #[derive(Resource, Deref, DerefMut, Default)]
 pub struct BaseInventory(pub Inventory<9>);
@@ -22,13 +22,13 @@ impl<const N: usize> Default for Inventory<N> {
     }
 }
 
+// TODO: perform more bound checks (upper-bound)
 impl<const N: usize> Inventory<N> {
     pub fn selected_slot(&self) -> Option<usize> {
         if self.selected == 0 {
-            None
-        } else {
-            Some(self.selected)
+            return None;
         }
+        Some(self.selected)
     }
 
     pub fn clear_selection(&mut self) {
@@ -41,10 +41,17 @@ impl<const N: usize> Inventory<N> {
 
     pub fn selected_item(&self) -> Option<&Item> {
         if self.selected == 0 {
-            None
-        } else {
-            self.items[self.selected - 1].as_ref()
+            return None;
         }
+        self.items[self.selected - 1].as_ref()
+    }
+
+    /// slot: 1-indexed
+    pub fn get_item(&self, slot: usize) -> Option<&Item> {
+        if slot == 0 {
+            return None;
+        }
+        self.items[slot - 1].as_ref()
     }
 
     /// slot: 1-indexed
@@ -64,6 +71,12 @@ impl<const N: usize> Inventory<N> {
 pub struct BaseInventoryBackground;
 
 #[derive(Component)]
+pub struct InventorySlotBackground {
+    pub base: Entity,
+    pub slot: usize,
+}
+
+#[derive(Component)]
 pub struct InventorySlot {
     pub base: Entity,
     pub slot: usize,
@@ -77,6 +90,7 @@ pub struct InventorySettings {
     pub w_mid_step: f32,
     pub h_padding: f32,
     // pub h_mid_step: f32,
+    pub slot_margin: f32,
     pub slot_size: f32,
 }
 
@@ -96,6 +110,7 @@ pub fn spawn_base_inventory(
         w_mid_step,
         h_padding,
         // h_mid_step,
+        slot_margin,
         slot_size,
     } = settings.0;
 
@@ -114,7 +129,7 @@ pub fn spawn_base_inventory(
                     color: Color::GRAY,
                     ..Default::default()
                 },
-                transform: Transform::from_translation(Vec3::new(pos.x, pos.y, 2.0))
+                transform: Transform::from_translation(Vec3::new(pos.x, pos.y, 42.0))
                     .with_scale(Vec3::new(w_total, h_total, 1.0)),
                 visibility: Visibility::Visible,
                 ..Default::default()
@@ -129,8 +144,9 @@ pub fn spawn_base_inventory(
         let x = x_start + (i as f32 * (slot_size + w_mid_step));
         let y = pos.y;
         trace!("{x}-{y}");
+
         commands.spawn((
-            InventorySlot {
+            InventorySlotBackground {
                 base: inventory_background,
                 slot: i + 1,
             },
@@ -139,9 +155,25 @@ pub fn spawn_base_inventory(
                     color: Color::rgba(0.9, 0.9, 0.9, 1.0),
                     ..Default::default()
                 },
-                transform: Transform::from_translation(Vec3::new(x, y, 3.0))
+                transform: Transform::from_translation(Vec3::new(x, y, 43.0))
                     .with_scale(Vec3::new(slot_size, slot_size, 1.0)),
                 visibility: Visibility::Visible,
+                ..Default::default()
+            },
+        ));
+
+        commands.spawn((
+            InventorySlot {
+                base: inventory_background,
+                slot: i + 1,
+            },
+            SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Some(Vec2::new(slot_size - slot_margin, slot_size - slot_margin)),
+                    ..Default::default()
+                },
+                transform: Transform::from_translation(Vec3::new(x, y, 44.0)),
+                visibility: Visibility::Hidden,
                 ..Default::default()
             },
         ));
@@ -166,4 +198,25 @@ pub fn spawn_base_inventory(
     //         ));
     //     }
     // });
+}
+
+pub fn render_items_in_base_inventory(
+    inventory: Res<BaseInventory>,
+    // images: Res<Assets<Image>>,
+    preview_items: Query<(&ItemCode, &ItemImage), With<ItemPreview>>,
+    mut slot_items: Query<(&InventorySlot, &mut Handle<Image>, &mut Visibility)>,
+) {
+    for (slot, mut slot_image, mut visibility) in slot_items.iter_mut() {
+        if let Some(item) = &inventory.get_item(slot.slot) {
+            let Some((_, item_image)) = preview_items
+                .iter()
+                .find(|(item_code, _)| **item_code == item.code)
+            else {
+                continue;
+            };
+            // trace!("Item in slot {}, code: {}", slot.slot, item.code.0);
+            *slot_image = item_image.0.clone();
+            *visibility = Visibility::Visible;
+        }
+    }
 }
