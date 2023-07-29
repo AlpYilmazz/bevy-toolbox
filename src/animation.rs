@@ -526,11 +526,11 @@ pub fn animation_sequence_tick_system<TComponent, TLens>(
     }
 }
 
-pub struct TransformTranslationLens {
+pub struct TranslationLens {
     pub start: Vec3,
     pub end: Vec3,
 }
-impl AnimationLens for TransformTranslationLens {
+impl AnimationLens for TranslationLens {
     type C = Transform;
 
     fn lerp(&self, target: &mut Self::C, progress: f32) {
@@ -538,11 +538,11 @@ impl AnimationLens for TransformTranslationLens {
     }
 }
 
-pub struct TransformScaleLens {
+pub struct ScaleLens {
     pub start: Vec3,
     pub end: Vec3,
 }
-impl AnimationLens for TransformScaleLens {
+impl AnimationLens for ScaleLens {
     type C = Transform;
 
     fn lerp(&self, target: &mut Self::C, progress: f32) {
@@ -556,19 +556,19 @@ impl Plugin for AnimationPlugin {
         app.add_event::<AnimationCompleted>()
             .add_systems(
                 Update,
-                animation_tick_system::<Transform, TransformTranslationLens>,
+                animation_tick_system::<Transform, TranslationLens>,
             )
             .add_systems(
                 Update,
-                animation_sequence_tick_system::<Transform, TransformTranslationLens>,
+                animation_sequence_tick_system::<Transform, TranslationLens>,
             )
             .add_systems(
                 Update,
-                animation_tick_system::<Transform, TransformScaleLens>,
+                animation_tick_system::<Transform, ScaleLens>,
             )
             .add_systems(
                 Update,
-                animation_sequence_tick_system::<Transform, TransformScaleLens>,
+                animation_sequence_tick_system::<Transform, ScaleLens>,
             );
     }
 }

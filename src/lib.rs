@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use animation::{
     curves, Animation, AnimationCurve, AnimationStep, Animator, Delay, Repeat, SequenceAnimator,
-    TransformTranslationLens, TransformScaleLens,
+    TranslationLens, ScaleLens,
 };
 use bevy::{prelude::*, window::PrimaryWindow};
 use grid::{AsGridCoord, GridSettings};
@@ -103,7 +103,7 @@ pub fn spawn_initial(
                         duration: Duration::from_secs(2),
                         curve: EaseFunction::QuadraticInOut.into(),
                     },
-                    TransformTranslationLens {
+                    TranslationLens {
                         start: pos1,
                         end: pos2,
                     },
@@ -116,7 +116,7 @@ pub fn spawn_initial(
                         duration: Duration::from_secs(2),
                         curve: AnimationCurve::Linear,
                     },
-                    TransformTranslationLens {
+                    TranslationLens {
                         start: pos2,
                         end: pos3,
                     },
@@ -130,7 +130,7 @@ pub fn spawn_initial(
                 curve: EaseFunction::BounceInOut.into(),
             },
             Repeat::Mirrored,
-            TransformScaleLens {
+            ScaleLens {
                 start: scale1,
                 end: scale2,
             }
