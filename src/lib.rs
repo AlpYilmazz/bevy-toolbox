@@ -1,8 +1,12 @@
 use std::time::Duration;
 
-use animation::{curves, Animation, AnimationCurve, Animator, Repeat, TransformTranslationLens};
+use animation::{
+    curves, Animation, AnimationCurve, AnimationStep, Animator, Delay, Repeat, SequenceAnimator,
+    TransformTranslationLens, TransformScaleLens,
+};
 use bevy::{prelude::*, window::PrimaryWindow};
 use grid::{AsGridCoord, GridSettings};
+use interpolation::EaseFunction;
 use inventory::BaseInventory;
 use items::{ItemCode, ItemPreview};
 use utils::cursor_to_window_coord;
@@ -65,6 +69,12 @@ pub fn spawn_initial(
         -window_h / 2.0 + window_padding,
         0.5,
     );
+    let scale = Vec3::new(1.0, 1.0, 1.0);
+    let pos1 = pos;
+    let pos2 = pos1 + Vec3::new(250.0, 250.0, 0.0);
+    let pos3 = pos2 + Vec3::new(200.0, 0.0, 0.0);
+    let scale1 = scale;
+    let scale2 = Vec3::new(2.0, 2.0, 1.0);
     commands.spawn((
         SpriteBundle {
             sprite: Sprite {
@@ -72,20 +82,59 @@ pub fn spawn_initial(
                 ..Default::default()
             },
             texture: dummy_image_handle,
-            transform: Transform::from_translation(pos).with_scale(Vec3::new(1.0, 1.0, 1.0)),
+            transform: Transform::from_translation(pos).with_scale(scale),
             ..Default::default()
         },
+        // Animator::new(
+        //     Animation {
+        //         duration: Duration::from_secs(2),
+        //         curve: AnimationCurve::new(curves::second_order),
+        //     },
+        //     Repeat::Always,
+        //     TransformTranslationLens {
+        //         start: pos1,
+        //         end: pos2,
+        //     },
+        // ),
+        SequenceAnimator::new(
+            vec![
+                AnimationStep::Animation(
+                    Animation {
+                        duration: Duration::from_secs(2),
+                        curve: EaseFunction::QuadraticInOut.into(),
+                    },
+                    TransformTranslationLens {
+                        start: pos1,
+                        end: pos2,
+                    },
+                ),
+                AnimationStep::Delay(Delay {
+                    duration: Duration::from_secs(2),
+                }),
+                AnimationStep::Animation(
+                    Animation {
+                        duration: Duration::from_secs(2),
+                        curve: AnimationCurve::Linear,
+                    },
+                    TransformTranslationLens {
+                        start: pos2,
+                        end: pos3,
+                    },
+                ),
+            ],
+            Repeat::Mirrored,
+        ),
         Animator::new(
             Animation {
-                duration: Duration::from_secs(2),
-                curve: AnimationCurve::new(curves::second_order),
+                duration: Duration::from_secs(3),
+                curve: EaseFunction::BounceInOut.into(),
             },
             Repeat::Mirrored,
-            TransformTranslationLens {
-                start: pos,
-                end: pos + Vec3::new(100.0, 100.0, 0.0),
-            },
-        ),
+            TransformScaleLens {
+                start: scale1,
+                end: scale2,
+            }
+        )
     ));
 }
 
