@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use animation::{
-    curves, Animation, AnimationCurve, AnimationStep, Animator, Delay, Repeat, SequenceAnimator,
-    TranslationLens, ScaleLens,
+    Animation, AnimationCurve, AnimationStep, Animator, Delay, Repeat, ScaleLens, SequenceAnimator,
+    TranslationLens,
 };
 use bevy::{prelude::*, window::PrimaryWindow};
 use grid::{AsGridCoord, GridSettings};
@@ -133,8 +133,8 @@ pub fn spawn_initial(
             ScaleLens {
                 start: scale1,
                 end: scale2,
-            }
-        )
+            },
+        ),
     ));
 }
 

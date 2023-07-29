@@ -56,10 +56,7 @@ impl AsGridCoord for Vec2 {
 
 #[cfg(test)]
 mod tests {
-    use bevy::{
-        math::Vec3Swizzles,
-        prelude::{Vec2, Vec3},
-    };
+    use bevy::prelude::Vec2;
 
     use super::AsGridCoord;
 
@@ -118,7 +115,7 @@ mod tests {
         {
             let grid_coord = translation.as_grid_coord(grid_size);
             let grid_translation_found = grid_coord.translation(grid_size);
-            
+
             println!("{:?}", grid_coord);
             assert_eq!(grid_translation_found, grid_translation);
         }
